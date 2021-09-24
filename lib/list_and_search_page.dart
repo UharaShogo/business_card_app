@@ -11,16 +11,11 @@ void main() async {
   runApp(ListPage());
 }
 
-
 class ListPage extends StatefulWidget {
 
   @override
   _ListPageState createState() => _ListPageState();
 }
-
-
-
-
 
 class _ListPageState extends State<ListPage> {
   TextEditingController controller = TextEditingController();
@@ -31,14 +26,6 @@ class _ListPageState extends State<ListPage> {
   Future<void> deleteCard(String docId) async{
     var document = FirebaseFirestore.instance.collection('card').doc(docId);
     document.delete();
-
-  }
-
-  Future<void> searchCard(String searchWord) async{
-
-
-
-    // document.delete();
 
   }
 
@@ -65,9 +52,6 @@ class _ListPageState extends State<ListPage> {
       ),
       body: Column(
         children: [
-          TextField(
-
-          ),
           Flexible(
             child: StreamBuilder<QuerySnapshot>(
 
@@ -114,20 +98,14 @@ class _ListPageState extends State<ListPage> {
                                         onLongPress: ()async{
                                           await deleteCard(document.id);
                                           Navigator.pop(context);
-
                                         },
                                       ),
-
                                     ],
                                   ),
-
                                 );
-
                               });
-
                             },
                           ),
-
                         ),
                         Divider(thickness: 2,),
                       ],
@@ -139,46 +117,6 @@ class _ListPageState extends State<ListPage> {
           ),
         ],
       ),
-
-
-      floatingActionButton: FloatingActionButton(
-        onPressed: (){
-
-          showModalBottomSheet(context: context, builder: (context){
-            return Column(
-              children: [
-                TextField(
-                  controller: controller,
-                  decoration: InputDecoration(hintText: 'Enter keyword'),
-                  onChanged: (String val) {
-                    search(val);
-
-                  },
-                ),
-                // ListView.builder(
-                //   shrinkWrap: true,
-                //   physics: const NeverScrollableScrollPhysics(),
-                //   itemCount: 4,
-                //   itemBuilder: (BuildContext context, index){
-                //     return ListTile(
-                //       title: Text('a'),
-                //       onTap: (){
-                //
-                //       },
-                //     );
-                //   },
-                // ),
-              ],
-            );
-
-          });
-
-        },
-
-        child: const Icon(Icons.search),
-      ),
-
     );
   }
-
 }

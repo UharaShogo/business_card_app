@@ -337,7 +337,7 @@ class _EditPageState extends State<EditPage> {
                       onPressed: () async{
                         await editCard();
                         Navigator.pop(context);
-                        Navigator.pop(context);
+                        // Navigator.pop(context);
 
                       },
                       child: Text('編集',style: TextStyle(color: Colors.white),),

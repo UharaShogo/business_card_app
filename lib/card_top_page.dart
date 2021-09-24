@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'add_card_page.dart';
+import 'exact_match_search.dart';
 import 'list_page.dart';
 import 'search_page.dart';
 import 'test_search_page.dart';
@@ -53,55 +54,19 @@ class _CardTopPageState extends State<CardTopPage> {
                 }),
 
             RaisedButton(
-                child: Text('テスト検索ページ'),
+                child: Text('一覧、検索ページ'),
                 onPressed: (){
                   Navigator.push(context, MaterialPageRoute(builder: (context) => TestSearchPage()));
                 }),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('検索項目'),
-                DropdownButton<String>(
-
-                  value: dropdownValue,
-                  icon: const Icon(Icons.arrow_downward),
-                  iconSize: 24,
-                  elevation: 16,
-                  style: const TextStyle(
-                      color: Colors.deepPurple
-                  ),
-                  underline: Container(
-                    height: 2,
-                    color: Colors.deepPurpleAccent,
-                  ),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      dropdownValue = newValue!;
-                    });
-                  },
-                  items: <String>['coName', 'tel', 'furigana', 'name']
-                      .map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-
-                ),
-              ],
-            ),
-
-
-            TextField(
-              controller: controller,
-              decoration: InputDecoration(hintText: 'Enter keyword'),
-            ),
-
             RaisedButton(
-                child: Text('検索ページ'),
+                child: Text('完全一致検索ページ'),
                 onPressed: (){
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => SearchPage(dropdownValue,controller.text)));
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => ExactMatchSearchPage()));
+                }),
+            RaisedButton(
+                child: Text('名刺追加ページ'),
+                onPressed: (){
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => AddCardPage()));
                 }),
           ],
         ),

@@ -14,26 +14,14 @@ late TextEditingController controller;
 class _TestSearchPageState extends State<TestSearchPage> {
   // final List<String> searchTargets1 = List.generate(10, (index) => 'Something ${index + 1}');
   String dropdownValue = '選んでください';
-  var column = {'name':'名前','coName':'会社名','furigana':'ふりがな'};
+  // var column = {'name':'名前','coName':'会社名','furigana':'ふりがな'};
   String _selectedKey = 'name';
+  bool _isEnteredKeyword = false; //検索窓の入力、未入力の管理 false：未入力　　true：入力
 
-  List<String> searchTargets = [
-    "りんご",
-    "ごりら",
-    "ラッパ",
-    "狸",
-    "きつね",
-    "ねこ",
-    "こま",
-    "まんとひひ",
-    "ヒント",
-    "トマト",
-    "トートロジー"
-  ];
-  List<String> searchTargets2 =[];
+  List<String> searchTargets =[];
 
   void getTargets(String query) {
-    searchTargets2.clear();
+    searchTargets.clear();
   }
 
   List<String> searchResults = [];
@@ -45,7 +33,7 @@ class _TestSearchPageState extends State<TestSearchPage> {
     //   });
     //   return;
     // }
-    final List<String> hitItems = searchTargets2.where((element) {
+    final List<String> hitItems = searchTargets.where((element) {
       if (isCaseSensitive) {
         return element.contains(query);
       }
@@ -65,6 +53,28 @@ class _TestSearchPageState extends State<TestSearchPage> {
   void dispose() {
     super.dispose();
     controller.dispose();
+  }
+  Future<void> deleteCard(String docId) async{
+    var document = FirebaseFirestore.instance.collection('card').doc(docId);
+    document.delete();
+
+  }
+
+  Future<void> deleteCard1(String column, String data) async{
+    var aid;
+    await FirebaseFirestore.instance
+        .collection('card')
+        .where(column, isEqualTo: data)
+        .get()
+        .then(
+            (QuerySnapshot snapshot) => {
+          snapshot.docs.forEach((f) {
+            aid = f.reference.id;
+          }),
+        });
+    var document = FirebaseFirestore.instance.collection('card').doc(aid);
+    document.delete();
+
   }
 
 
@@ -95,16 +105,16 @@ class _TestSearchPageState extends State<TestSearchPage> {
                   color: Colors.deepPurpleAccent,
                 ),
                 onChanged: (String? newValue) async{
-                  searchTargets2.clear();
+                  searchTargets.clear();
                   final db = await FirebaseFirestore.instance;
                   var documents = await db.collection('card').get();
                   documents.docs.forEach((element) {
                     print(element[newValue.toString()]);
-                    searchTargets2.add(element[newValue.toString()]);
+                    searchTargets.add(element[newValue.toString()]);
                   });
                   setState(() {
                     _selectedKey = newValue!;
-                    dropdownValue = newValue!.toString();
+                    dropdownValue = newValue.toString();
                   });
                 },
                 items: <String>['選んでください','coName', 'tel', 'furigana', 'name']
@@ -118,60 +128,149 @@ class _TestSearchPageState extends State<TestSearchPage> {
               ),
             ],
           ),
-          // RaisedButton(
-          //   child: Text('LoadAlldocs'),
-          //   onPressed: () async {
-          //     // 指定コレクションのドキュメント一覧を取得
-          //     final db = await FirebaseFirestore.instance;
-          //         var documents = await db.collection('card').get();
-          //     documents.docs.forEach((element) {
-          //       print(element['name']);
-          //       searchTargets2.add(element['name']);
-          //     });
-          //     // ドキュメント一覧を配列で格納
-          //     setState(() {
-          //
-          //     });
-          //   },
-          // ),
-          // ドキュメント情報を表示
-          // Column(
-          //   children: documentList.map((document) {
-          //     return ListTile(
-          //       title: Text('name:${document['name']}'),
-          //     );
-          //   }).toList(),
-          // ),
+
           TextField(
             controller: controller,
             decoration: InputDecoration(hintText: 'Enter keyword'),
             onChanged: (String val){
+              if(val.length == 0){
+                _isEnteredKeyword = false;
+              }
+              else {
+                _isEnteredKeyword = true;
+              }
               search(val);
             },
           ),
-          ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: searchResults.length,
-              itemBuilder: (BuildContext context, index){
-
-                if(searchResults.length  > 0){
-                  Text('検索項目を選んでください');
-                }
-                return ListTile(
-                  title: Text(searchResults[index]),
-                  onTap: (){
-                    // DocumentSnapshot snapshot = FirebaseFirestore.instance.collection('card').where(_selectedKey.toString(),isEqualTo: searchResults[index]).get() as DocumentSnapshot<Object?>;
-                    // var doc = FirebaseFirestore.instance.collection('card').where(_selectedKey.toString(),isEqualTo: searchResults[index].toString());
-                    var doc = FirebaseFirestore.instance.collection('card').where(_selectedKey.toString(),isEqualTo: searchResults[index].toString()).get();
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => CardDetailPage(_selectedKey,searchResults[index])));
-
-                  },
-                );
-              }
-          )
+          _isEnteredKeyword !=false ? _buildListkouho(_selectedKey, searchResults) : _displayAllList(),
         ],
       ),
     );
   }
+
+  //検索候補を表示するウィジェット
+  Widget _buildListkouho(String key, List<String> results){
+    return ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: searchResults.length,
+        itemBuilder: (BuildContext context, index){
+
+          if(searchResults.length  > 0){
+            Text('検索項目を選んでください');
+          }
+          return ListTile(
+            title: Text(searchResults[index]),
+            onTap: (){
+              Navigator.push(context, MaterialPageRoute(builder: (context) => CardDetailPage(_selectedKey,searchResults[index])));
+
+            },
+            trailing: IconButton(
+              icon: Icon(Icons.delete),
+              onPressed: (){
+                showModalBottomSheet(context: context, builder: (context){
+                  return SafeArea(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListTile(
+                          leading: Icon(Icons.delete, color: Colors.redAccent,),
+                          title: Text('削除(長押し)'),
+                          onLongPress: ()async{
+                            // var aid = await getId(key, searchResults[index]);
+                            // FirebaseFirestore.instance.collection('card').where(key, isEqualTo: searchResults[index]).get().then((QuerySnapshot snapshot) => {
+                            //   snapshot.docs.forEach((element) {aid = element.reference.id;}),},);
+                            // print(aid);
+                            await deleteCard1(key, searchResults[index]);
+                            Navigator.pop(context);
+
+                          },
+                        ),
+
+                      ],
+                    ),
+
+                  );
+
+                });
+
+              },
+            ),
+          );
+        }
+    );
+  }
+
+
+
+  Widget _displayAllList(){
+     return Flexible(
+        child: StreamBuilder<QuerySnapshot>(
+
+          // stream: _cardStream,
+          stream: FirebaseFirestore.instance.collection('card').snapshots(),
+          builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting){
+              return CircularProgressIndicator();
+            }
+
+            if (snapshot.hasError) {
+              return Text('Something went wrong');
+            }
+
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Text("Loading");
+            }
+            return ListView(
+              children: snapshot.data!.docs.map((DocumentSnapshot document) {
+                Map<String, dynamic> data = document.data()! as Map<String, dynamic>;
+                return Column(
+                  children: [
+                    ListTile(
+                      title: Text(data['name'].toString()),
+                      subtitle: Text(data['coName']),
+
+                      onTap: (){
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => CardPage(document)));
+                      },
+
+                      trailing: IconButton(
+                        icon: Icon(Icons.delete),
+                        onPressed: (){
+                          showModalBottomSheet(context: context, builder: (context){
+                            return SafeArea(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ListTile(
+                                    leading: Icon(Icons.delete, color: Colors.redAccent,),
+                                    title: Text('削除(長押し)'),
+                                    onLongPress: ()async{
+                                      await deleteCard(document.id);
+                                      Navigator.pop(context);
+
+                                    },
+                                  ),
+
+                                ],
+                              ),
+
+                            );
+
+                          });
+
+                        },
+                      ),
+
+                    ),
+                    Divider(thickness: 2,),
+                  ],
+                );
+              }).toList(),
+            );
+          },
+        ),
+      );
+  }
+
 }
