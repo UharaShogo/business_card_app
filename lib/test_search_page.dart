@@ -1,3 +1,4 @@
+import 'package:business_card_app/card_detail_page.dart';
 import 'package:business_card_app/card_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -163,7 +164,7 @@ class _TestSearchPageState extends State<TestSearchPage> {
                     // DocumentSnapshot snapshot = FirebaseFirestore.instance.collection('card').where(_selectedKey.toString(),isEqualTo: searchResults[index]).get() as DocumentSnapshot<Object?>;
                     // var doc = FirebaseFirestore.instance.collection('card').where(_selectedKey.toString(),isEqualTo: searchResults[index].toString());
                     var doc = FirebaseFirestore.instance.collection('card').where(_selectedKey.toString(),isEqualTo: searchResults[index].toString()).get();
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => CardPage(doc)));
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => CardDetailPage(_selectedKey,searchResults[index])));
 
                   },
                 );
