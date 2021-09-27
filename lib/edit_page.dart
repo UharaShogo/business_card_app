@@ -335,9 +335,10 @@ class _EditPageState extends State<EditPage> {
                     child: RaisedButton(
                       color:  Theme.of(context).primaryColor,
                       onPressed: () async{
+
                         await editCard();
                         Navigator.pop(context);
-                        // Navigator.pop(context);
+                        Navigator.pop(context);
 
                       },
                       child: Text('編集',style: TextStyle(color: Colors.white),),

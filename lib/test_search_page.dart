@@ -12,12 +12,9 @@ class TestSearchPage extends StatefulWidget {
 late TextEditingController controller;
 
 class _TestSearchPageState extends State<TestSearchPage> {
-  // final List<String> searchTargets1 = List.generate(10, (index) => 'Something ${index + 1}');
   String dropdownValue = '選んでください';
-  // var column = {'name':'名前','coName':'会社名','furigana':'ふりがな'};
   String _selectedKey = 'name';
   bool _isEnteredKeyword = false; //検索窓の入力、未入力の管理 false：未入力　　true：入力
-
   List<String> searchTargets =[];
 
   void getTargets(String query) {
@@ -26,23 +23,6 @@ class _TestSearchPageState extends State<TestSearchPage> {
 
   List<String> searchResults = [];
 
-  void search(String query, {bool isCaseSensitive = false}) {
-    // if (query.isEmpty) {
-    //   setState(() {
-    //     searchResults.clear();
-    //   });
-    //   return;
-    // }
-    final List<String> hitItems = searchTargets.where((element) {
-      if (isCaseSensitive) {
-        return element.contains(query);
-      }
-      return element.toLowerCase().contains(query.toLowerCase());
-    }).toList();
-    setState(() {
-      searchResults = hitItems;
-    });
-  }
   @override
   void initState() {
     super.initState();
@@ -54,10 +34,10 @@ class _TestSearchPageState extends State<TestSearchPage> {
     super.dispose();
     controller.dispose();
   }
+
   Future<void> deleteCard(String docId) async{
     var document = FirebaseFirestore.instance.collection('card').doc(docId);
     document.delete();
-
   }
 
   Future<void> deleteCard1(String column, String data) async{
@@ -74,13 +54,25 @@ class _TestSearchPageState extends State<TestSearchPage> {
         });
     var document = FirebaseFirestore.instance.collection('card').doc(aid);
     document.delete();
+  }
 
+  void search(String query, {bool isCaseSensitive = false}) {
+    final List<String> hitItems = searchTargets.where((element) {
+      if (isCaseSensitive) {
+        return element.contains(query);
+      }
+      return element.toLowerCase().contains(query.toLowerCase());
+    }).toList();
+    setState(() {
+      searchResults = hitItems;
+    });
   }
 
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       appBar: AppBar(
         title: Text('data'),
       ),
@@ -109,7 +101,6 @@ class _TestSearchPageState extends State<TestSearchPage> {
                   final db = await FirebaseFirestore.instance;
                   var documents = await db.collection('card').get();
                   documents.docs.forEach((element) {
-                    print(element[newValue.toString()]);
                     searchTargets.add(element[newValue.toString()]);
                   });
                   setState(() {
@@ -143,6 +134,7 @@ class _TestSearchPageState extends State<TestSearchPage> {
             },
           ),
           _isEnteredKeyword !=false ? _buildListkouho(_selectedKey, searchResults) : _displayAllList(),
+
         ],
       ),
     );
@@ -150,54 +142,56 @@ class _TestSearchPageState extends State<TestSearchPage> {
 
   //検索候補を表示するウィジェット
   Widget _buildListkouho(String key, List<String> results){
-    return ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: searchResults.length,
-        itemBuilder: (BuildContext context, index){
+    return Flexible(
+      child: ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: searchResults.length,
+          itemBuilder: (BuildContext context, index){
 
-          if(searchResults.length  > 0){
-            Text('検索項目を選んでください');
-          }
-          return ListTile(
-            title: Text(searchResults[index]),
-            onTap: (){
-              Navigator.push(context, MaterialPageRoute(builder: (context) => CardDetailPage(_selectedKey,searchResults[index])));
-
-            },
-            trailing: IconButton(
-              icon: Icon(Icons.delete),
-              onPressed: (){
-                showModalBottomSheet(context: context, builder: (context){
-                  return SafeArea(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ListTile(
-                          leading: Icon(Icons.delete, color: Colors.redAccent,),
-                          title: Text('削除(長押し)'),
-                          onLongPress: ()async{
-                            // var aid = await getId(key, searchResults[index]);
-                            // FirebaseFirestore.instance.collection('card').where(key, isEqualTo: searchResults[index]).get().then((QuerySnapshot snapshot) => {
-                            //   snapshot.docs.forEach((element) {aid = element.reference.id;}),},);
-                            // print(aid);
-                            await deleteCard1(key, searchResults[index]);
-                            Navigator.pop(context);
-
-                          },
-                        ),
-
-                      ],
-                    ),
-
-                  );
-
-                });
-
+            if(searchResults.length  > 0){
+              Text('検索項目を選んでください');
+            }
+            return ListTile(
+              title: Text(searchResults[index]),
+              onTap: (){
+                Navigator.push(context, MaterialPageRoute(builder: (context) => CardDetailPage(_selectedKey,searchResults[index])));
               },
-            ),
-          );
-        }
+              trailing: IconButton(
+                icon: Icon(Icons.delete),
+                onPressed: (){
+                  showModalBottomSheet(context: context, builder: (context){
+                    return SafeArea(
+
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            leading: Icon(Icons.delete, color: Colors.redAccent,),
+                            title: Text('削除(長押し)'),
+                            onLongPress: ()async{
+                              await deleteCard1(key, searchResults[index]);
+                              setState(() {
+                                searchResults.removeAt(index);
+                              });
+
+                              Navigator.pop(context,true);
+
+                            },
+                          ),
+
+                        ],
+                      ),
+
+                    );
+
+                  });
+
+                },
+              ),
+            );
+          }
+      ),
     );
   }
 
@@ -206,8 +200,6 @@ class _TestSearchPageState extends State<TestSearchPage> {
   Widget _displayAllList(){
      return Flexible(
         child: StreamBuilder<QuerySnapshot>(
-
-          // stream: _cardStream,
           stream: FirebaseFirestore.instance.collection('card').snapshots(),
           builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting){
